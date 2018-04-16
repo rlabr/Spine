@@ -376,7 +376,23 @@ open class Spine {
 
 		return promise.future
 	}
-
+	
+	open func copyAll<T: Resource>(_ resources: [T], _ query : Query<T>) -> Future<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError> {
+		let promise = Promise<(resources: ResourceCollection, meta: Metadata?, jsonapi: JSONAPIData?), SpineError>()
+		let operation = CopyOperation(resources: resources, spine: self, query: query)
+		operation.completionBlock = { [unowned operation] in
+		    switch operation.result! {
+		    case .success(let document):
+			let response = (ResourceCollection(document: document), document.meta, document.jsonapi)
+			promise.success(response)
+		    case .failure(let error):
+			promise.failure(error)
+		    }
+		}
+		addOperation(operation)
+		return promise.future
+    	}
+	
 	/**
 	Deletes the given resource.
 
